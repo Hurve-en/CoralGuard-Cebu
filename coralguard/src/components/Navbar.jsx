@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import citaLogo from "../assets/CITA_logo.jpg";
 
 const navItems = [
   { label: "Overview", path: "/" },
@@ -19,26 +20,17 @@ export default function Navbar() {
     >
       {/* Logo */}
       <div className="flex items-center gap-2.5">
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-sm"
-          style={{ background: "linear-gradient(135deg, #4ade80, #0ea5e9)" }}
-        >
-          🪸
-        </div>
+        <img
+          src={citaLogo}
+          alt="CITA logo"
+          className="w-7 h-7 rounded-lg object-cover"
+          style={{ border: "1px solid rgba(255,255,255,0.08)" }}
+        />
         <span
           className="text-sm font-semibold tracking-tight text-white"
           style={{ fontFamily: "'DM Sans', sans-serif" }}
         >
-          CoralGuard
-        </span>
-        <span
-          className="text-sm ml-0.5"
-          style={{
-            color: "rgba(248,250,252,0.25)",
-            fontFamily: "'DM Sans', sans-serif",
-          }}
-        >
-          Cebu
+          CITA-CGC
         </span>
       </div>
 

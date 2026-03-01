@@ -221,7 +221,6 @@ export default function Analyze() {
                 : "rgba(255,255,255,0.02)",
             }}
           >
-            <div className="text-4xl mb-4">🌊</div>
             <div
               className="text-sm font-medium mb-2"
               style={{
