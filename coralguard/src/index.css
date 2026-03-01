@@ -245,3 +245,15 @@ body {
     display: none;
   }
 }
+
+@media (max-width: 900px) {
+  .coral-chat-scroll,
+  .coral-chat-input-wrap {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .coral-chat-bubble {
+    max-width: 100% !important;
+  }
+}

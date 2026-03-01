@@ -3,119 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Tooltip } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import ScoreRing from "../components/ScoreRing";
 import { useNavigate } from "react-router-dom";
-import { getReports } from "../lib/supabase";
-
-const REEFS = [
-  {
-    id: 1,
-    name: "Moalboal Reef Wall",
-    lat: 9.9367,
-    lng: 123.3972,
-    score: 78,
-    status: "Healthy",
-    bleach: 12,
-    coverage: 74,
-    location: "SW Cebu",
-    lastReport: "2 hrs ago",
-    threat: "Tourism pressure",
-    depth: "5–25m",
-  },
-  {
-    id: 2,
-    name: "Pescador Island",
-    lat: 9.8667,
-    lng: 123.3667,
-    score: 55,
-    status: "At Risk",
-    bleach: 38,
-    coverage: 48,
-    location: "SW Cebu",
-    lastReport: "5 hrs ago",
-    threat: "Thermal stress",
-    depth: "3–40m",
-  },
-  {
-    id: 3,
-    name: "Malapascua Shoal",
-    lat: 11.3333,
-    lng: 124.1167,
-    score: 31,
-    status: "Critical",
-    bleach: 71,
-    coverage: 22,
-    location: "N Cebu",
-    lastReport: "1 day ago",
-    threat: "Bleaching event",
-    depth: "10–30m",
-  },
-  {
-    id: 4,
-    name: "Olango Island Flat",
-    lat: 10.2667,
-    lng: 124.0667,
-    score: 82,
-    status: "Healthy",
-    bleach: 8,
-    coverage: 80,
-    location: "Mactan",
-    lastReport: "1 day ago",
-    threat: "Sedimentation",
-    depth: "2–15m",
-  },
-  {
-    id: 5,
-    name: "Mactan North Reef",
-    lat: 10.35,
-    lng: 124.0,
-    score: 47,
-    status: "At Risk",
-    bleach: 45,
-    coverage: 40,
-    location: "Mactan",
-    lastReport: "2 days ago",
-    threat: "Anchor damage",
-    depth: "1–10m",
-  },
-  {
-    id: 6,
-    name: "Bantayan Island",
-    lat: 11.1667,
-    lng: 123.7167,
-    score: 70,
-    status: "Healthy",
-    bleach: 20,
-    coverage: 65,
-    location: "N Cebu",
-    lastReport: "3 days ago",
-    threat: "Illegal fishing",
-    depth: "3–20m",
-  },
-  {
-    id: 7,
-    name: "Camotes Sea Reef",
-    lat: 10.6667,
-    lng: 124.35,
-    score: 40,
-    status: "At Risk",
-    bleach: 52,
-    coverage: 38,
-    location: "E Cebu",
-    lastReport: "4 days ago",
-    threat: "Crown-of-thorns",
-    depth: "5–30m",
-  },
-];
-
-const LOCATION_COORDS = {
-  "Moalboal, Cebu": [9.9367, 123.3972],
-  "Pescador Island": [9.8667, 123.3667],
-  "Malapascua Island": [11.3333, 124.1167],
-  "Mactan Island": [10.3157, 123.9494],
-  "Camotes Island": [10.6667, 124.35],
-  "Olango Island": [10.2667, 124.0667],
-  "Bantayan Island": [11.1667, 123.7167],
-  "Other / Unknown": [10.3157, 123.8854],
-};
+import { loadUnifiedReefFeed } from "../lib/reefFeed";
 
 const statusColor = (s) =>
   ({ Healthy: "#4ade80", "At Risk": "#fb923c", Critical: "#f87171" })[s] ||
@@ -132,48 +20,26 @@ const scoreColor = (n) =>
   n >= 65 ? "#4ade80" : n >= 40 ? "#fb923c" : "#f87171";
 
 export default function ReefMap() {
-  const [reefs, setReefs] = useState(REEFS);
+  const [reefs, setReefs] = useState([]);
+  const [sourceLabel, setSourceLabel] = useState("Loading...");
+  const [dataNote, setDataNote] = useState("");
   const [selected, setSelected] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     let active = true;
     const loadReports = async () => {
-      const reports = await getReports(50);
-      if (!active || !Array.isArray(reports) || reports.length === 0) return;
-
-      const mapped = reports.map((r, idx) => {
-        const location = r.location || "Other / Unknown";
-        const [lat, lng] = LOCATION_COORDS[location] || LOCATION_COORDS["Other / Unknown"];
-        const diff = (Date.now() - new Date(r.reported_at)) / 1000;
-        const lastReport =
-          !Number.isFinite(diff) || diff < 0
-            ? "recently"
-            : diff < 3600
-              ? `${Math.max(1, Math.floor(diff / 60))} min ago`
-              : diff < 86400
-                ? `${Math.floor(diff / 3600)} hrs ago`
-                : `${Math.floor(diff / 86400)} days ago`;
-
-        return {
-          id: r.id || `report-${idx}`,
-          name: location,
-          lat,
-          lng,
-          score: Number.isFinite(r.health_score) ? r.health_score : 0,
-          status: r.status || "At Risk",
-          bleach: Number.isFinite(r.bleaching_percent) ? r.bleaching_percent : 0,
-          coverage: Number.isFinite(r.coral_coverage) ? r.coral_coverage : 0,
-          location,
-          lastReport,
-          threat: r.main_threat || "Unknown",
-          depth: "N/A",
-        };
-      });
-
-      setReefs(mapped);
+      const {
+        reefs: feed,
+        sourceLabel: source,
+        dataNote: note,
+      } = await loadUnifiedReefFeed(50);
+      if (!active) return;
+      setReefs(feed);
+      setSourceLabel(source);
+      setDataNote(note || "");
       setSelected((prev) =>
-        prev ? mapped.find((m) => String(m.id) === String(prev.id)) || null : null,
+        prev ? feed.find((m) => String(m.id) === String(prev.id)) || null : null,
       );
     };
 
@@ -182,6 +48,10 @@ export default function ReefMap() {
       active = false;
     };
   }, []);
+
+  const mapReadyReefs = reefs.filter(
+    (r) => Number.isFinite(r?.lat) && Number.isFinite(r?.lng),
+  );
 
   return (
     <div
@@ -218,6 +88,26 @@ export default function ReefMap() {
           >
             Cebu Reef Map
           </h2>
+          <p
+            className="text-xs mt-1"
+            style={{
+              color: "rgba(248,250,252,0.35)",
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {sourceLabel}
+          </p>
+          {dataNote && (
+            <p
+              className="text-xs mt-1"
+              style={{
+                color: "rgba(248,250,252,0.26)",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              {dataNote}
+            </p>
+          )}
         </div>
 
         {/* Legend */}
@@ -256,7 +146,7 @@ export default function ReefMap() {
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               attribution="© CartoDB"
             />
-            {reefs.map((reef) => (
+            {mapReadyReefs.map((reef) => (
               <CircleMarker
                 key={reef.id}
                 center={[reef.lat, reef.lng]}
@@ -431,6 +321,21 @@ export default function ReefMap() {
                 >
                   {selected.threat}
                 </div>
+                {selected.method && (
+                  <div
+                    className="text-xs mt-2"
+                    style={{
+                      color: "rgba(248,250,252,0.45)",
+                      fontFamily: "'DM Sans', sans-serif",
+                    }}
+                  >
+                    {selected.method}
+                    {selected.confidence ? ` · Confidence: ${selected.confidence}` : ""}
+                    {Number.isFinite(selected.uncertainty)
+                      ? ` (±${selected.uncertainty})`
+                      : ""}
+                  </div>
+                )}
               </div>
 
               {/* CTA */}
@@ -463,10 +368,10 @@ export default function ReefMap() {
                     fontFamily: "'DM Sans', sans-serif",
                   }}
                 >
-                  {reefs.length} Reefs Monitored
+                  {mapReadyReefs.length} Reefs Monitored
                 </p>
               </div>
-              {reefs.map((r) => (
+              {mapReadyReefs.map((r) => (
                 <div
                   key={r.id}
                   className="flex items-center justify-between px-6 py-4 cursor-pointer border-b transition-colors hover:bg-white/2"

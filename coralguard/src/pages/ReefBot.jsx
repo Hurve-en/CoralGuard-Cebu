@@ -68,7 +68,10 @@ export default function ReefBot() {
   };
 
   return (
-    <div className="flex flex-col" style={{ height: "calc(100vh - 64px)" }}>
+    <div
+      className="flex flex-col coral-chat-shell"
+      style={{ height: "calc(100vh - 64px)" }}
+    >
       {/* ── Header ── */}
       <div
         className="flex-shrink-0 px-12 py-5 border-b"
@@ -126,7 +129,7 @@ export default function ReefBot() {
 
       {/* ── Messages ── */}
       <div
-        className="flex-1 overflow-y-auto px-12 py-8"
+        className="flex-1 overflow-y-auto px-12 py-8 coral-chat-scroll"
         style={{ display: "flex", flexDirection: "column", gap: 16 }}
       >
         {messages.map((m, i) => (
@@ -138,7 +141,7 @@ export default function ReefBot() {
             }}
           >
             <div
-              className="max-w-lg px-5 py-4 text-sm leading-relaxed"
+              className="max-w-lg px-5 py-4 text-sm leading-relaxed coral-chat-bubble"
               style={{
                 borderRadius:
                   m.role === "user"
@@ -152,6 +155,9 @@ export default function ReefBot() {
                     : "none",
                 color: m.role === "user" ? "#0a0a0a" : "rgba(248,250,252,0.75)",
                 fontFamily: "'DM Sans', sans-serif",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                overflowWrap: "anywhere",
               }}
             >
               {m.role === "bot" && (
@@ -227,7 +233,7 @@ export default function ReefBot() {
 
       {/* ── Input ── */}
       <div
-        className="flex-shrink-0 px-12 py-5 border-t"
+        className="flex-shrink-0 px-12 py-5 border-t coral-chat-input-wrap"
         style={{ borderColor: "rgba(255,255,255,0.06)" }}
       >
         <div className="flex gap-3">

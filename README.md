@@ -50,3 +50,22 @@ Returns: "Coral is 35% bleached.
          restrict fishing for 3 months"
         ↓
 Map updates + LGU gets notified
+
+## Overview Recent Reports Data Flow
+
+`/` (Overview) now uses this source priority:
+
+1. CoralGuard report records from Supabase (`reef_reports`) or local fallback storage.
+2. If there are no stored reports, it fetches real Cebu marine observations from Open-Meteo Marine API:
+   - Provider: Open-Meteo
+   - Endpoint: `https://marine-api.open-meteo.com/v1/marine`
+   - Variable used: `sea_surface_temperature`
+   - Cebu sites: Moalboal, Pescador, Malapascua, Mactan, Camotes, Olango, Bantayan
+
+Update frequency:
+- Open-Meteo marine model outputs update upstream multiple times per day depending on the source model.
+
+Backend/processing flow:
+- Frontend fetches latest 24h SST per Cebu site.
+- App derives a thermal-stress status (`Healthy`, `At Risk`, `Critical`) and displays it as a recent signal/report.
+- If external fetch fails, local fallback dataset is shown with explicit source label.

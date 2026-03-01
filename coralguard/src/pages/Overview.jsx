@@ -1,54 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ScoreRing from "../components/ScoreRing";
-import { getReports } from "../lib/supabase";
-
-const REEFS = [
-  {
-    id: 1,
-    name: "Moalboal Reef Wall",
-    score: 78,
-    status: "Healthy",
-    location: "SW Cebu",
-    lastReport: "2 hrs ago",
-    bleach: 12,
-    coverage: 74,
-    threat: "Tourism pressure",
-  },
-  {
-    id: 2,
-    name: "Pescador Island",
-    score: 55,
-    status: "At Risk",
-    location: "SW Cebu",
-    lastReport: "5 hrs ago",
-    bleach: 38,
-    coverage: 48,
-    threat: "Thermal stress",
-  },
-  {
-    id: 3,
-    name: "Malapascua Shoal",
-    score: 31,
-    status: "Critical",
-    location: "N Cebu",
-    lastReport: "1 day ago",
-    bleach: 71,
-    coverage: 22,
-    threat: "Bleaching event",
-  },
-  {
-    id: 4,
-    name: "Olango Island Flat",
-    score: 82,
-    status: "Healthy",
-    location: "Mactan",
-    lastReport: "1 day ago",
-    bleach: 8,
-    coverage: 80,
-    threat: "Sedimentation",
-  },
-];
+import { loadUnifiedReefFeed } from "../lib/reefFeed";
 
 const statusColor = (s) =>
   ({ Healthy: "#4ade80", "At Risk": "#fb923c", Critical: "#f87171" })[s] ||
@@ -66,38 +19,22 @@ const statusBg = (s) =>
 
 export default function Overview() {
   const navigate = useNavigate();
-  const [reefs, setReefs] = useState(REEFS);
+  const [reefs, setReefs] = useState([]);
+  const [sourceLabel, setSourceLabel] = useState("Loading...");
+  const [dataNote, setDataNote] = useState("");
 
   useEffect(() => {
     let active = true;
     const loadReports = async () => {
-      const reports = await getReports(8);
-      if (!active || !Array.isArray(reports) || reports.length === 0) return;
-
-      const normalized = reports.map((r, idx) => {
-        const diff = (Date.now() - new Date(r.reported_at)) / 1000;
-        const lastReport =
-          !Number.isFinite(diff) || diff < 0
-            ? "recently"
-            : diff < 3600
-              ? `${Math.max(1, Math.floor(diff / 60))} min ago`
-              : diff < 86400
-                ? `${Math.floor(diff / 3600)} hrs ago`
-                : `${Math.floor(diff / 86400)} days ago`;
-
-        return {
-          id: r.id || `report-${idx}`,
-          name: r.location || "Unknown Reef",
-          score: Number.isFinite(r.health_score) ? r.health_score : 0,
-          status: r.status || "At Risk",
-          location: r.location || "Unknown",
-          lastReport,
-          bleach: Number.isFinite(r.bleaching_percent) ? r.bleaching_percent : 0,
-          coverage: Number.isFinite(r.coral_coverage) ? r.coral_coverage : 0,
-          threat: r.main_threat || "Unknown",
-        };
-      });
-      setReefs(normalized);
+      const {
+        reefs: feed,
+        sourceLabel: source,
+        dataNote: note,
+      } = await loadUnifiedReefFeed(8);
+      if (!active) return;
+      setReefs(feed);
+      setSourceLabel(source);
+      setDataNote(note || "");
     };
 
     loadReports();
@@ -106,9 +43,9 @@ export default function Overview() {
     };
   }, []);
 
-  const avgScore = Math.round(
-    reefs.reduce((a, r) => a + r.score, 0) / reefs.length,
-  );
+  const avgScore = reefs.length
+    ? Math.round(reefs.reduce((a, r) => a + r.score, 0) / reefs.length)
+    : 0;
   const healthy = reefs.filter((r) => r.status === "Healthy").length;
   const atRisk = reefs.filter((r) => r.status === "At Risk").length;
   const critical = reefs.filter((r) => r.status === "Critical").length;
@@ -294,6 +231,26 @@ export default function Overview() {
             View all →
           </button>
         </div>
+        <p
+          className="text-xs mb-4"
+          style={{
+            color: "rgba(248,250,252,0.35)",
+            fontFamily: "'DM Sans', sans-serif",
+          }}
+        >
+          {sourceLabel}
+        </p>
+        {dataNote && (
+          <p
+            className="text-xs mb-4"
+            style={{
+              color: "rgba(248,250,252,0.28)",
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {dataNote}
+          </p>
+        )}
 
         <div>
           {reefs.map((r) => (
@@ -321,6 +278,7 @@ export default function Overview() {
                   }}
                 >
                   {r.location} · {r.lastReport}
+                  {r.method ? ` · ${r.method}` : ""}
                 </div>
               </div>
 
