@@ -1,4 +1,16 @@
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+function readGeminiApiKey() {
+  const env = import.meta.env || {};
+  const candidates = [
+    env.VITE_GEMINI_API_KEY,
+    env.VITE_gemini_API_Key,
+    env.VITE_GEMINI_API_Key,
+    env.VITE_Gemini_API_Key,
+  ];
+  const key = candidates.find((v) => typeof v === "string" && v.trim());
+  return key ? key.trim() : "";
+}
+
+const API_KEY = readGeminiApiKey();
 const GEMINI_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
