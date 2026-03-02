@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "installCommand": "cd coralguard && npm ci",
+  "buildCommand": "cd coralguard && npm run build",
+  "outputDirectory": "coralguard/dist"
+}
